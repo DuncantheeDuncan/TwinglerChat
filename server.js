@@ -1,31 +1,46 @@
 
-// Call packages
+const express = require("express");
+const socket = require("socket.io");
 const path = require('path');
-const http = require('http');
-const express = require('express');
-const socketio =  require('socket.io');
 
-// Initialize variables
+require('dotenv').config();// global V's
+
+
+// App setup
+const PORT = 5000;
 const app = express();
-const server = http.createServer(app);
-const io = socketio(server);
-
-
-// Declare routes variables
-const indexRouter = require('./routes/index');
+const server = app.listen(PORT, function () {
+  console.log(`Listening on port ${PORT}`);
+  console.log(`http://localhost:${PORT}`);
+});
 
 
 // Static folders
 app.set('views',path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
+
+app.use(express.static("public"));
+
+
+// Declare routes variables
+const indexRouter = require('./routes/index');
+
+
 // setup views connecting with routes
-app.use('/', indexRouter);
+app.use('/chat', indexRouter);
 
 
-const PORT = 8000 || process.env.PORT;
+// Socket setup
+const io = socket(server);
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`   ));
+// when user logs in
+io.on("connection", function (socket) {
+  console.log("Made socket connection");
+});
 
-module.exports = app;
-  
+
+
+console.log('Global variable '+process.env.NAME);
+
+// module.exports = app;
