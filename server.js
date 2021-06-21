@@ -1,46 +1,59 @@
+const express = require('express')
+const app = express()
+const server = require('http').Server(app)
+const io = require('socket.io')(server)
 
-const express = require("express");
-const socket = require("socket.io");
-const path = require('path');
+app.set('views', './views')
+app.set('view engine', 'ejs')// ejs // block in ejs
+app.use(express.static('public'))
+app.use(express.urlencoded({ extended: true }))
 
-require('dotenv').config();// global V's
+const rooms = { }
 
+app.get('/', (req, res) => {
+  res.render('index', { rooms: rooms })
+})
 
-// App setup
-const PORT = 5000;
-const app = express();
-const server = app.listen(PORT, function () {
-  console.log(`Listening on port ${PORT}`);
-  console.log(`http://localhost:${PORT}`);
-});
+app.post('/room', (req, res) => {
+  if (rooms[req.body.room] != null) {
+    return res.redirect('/')
+  }
+  rooms[req.body.room] = { users: {} }
+  res.redirect(req.body.room)
+  // Send message that new room was created
+  io.emit('room-created', req.body.room)
+})
 
+app.get('/:room', (req, res) => {
+  if (rooms[req.params.room] == null) {
+    return res.redirect('/')
+  }
+  res.render('room', { roomName: req.params.room })
+})
 
-// Static folders
-app.set('views',path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+server.listen(5000)
 
+io.on('connection', socket => {
+  socket.on('new-user', (room, name) => {
+    socket.join(room)
+    rooms[room].users[socket.id] = name
+    socket.to(room).broadcast.emit('user-connected', name)
+    console.log('user connected', name)
+  })
+  socket.on('send-chat-message', (room, message) => {
+    socket.to(room).broadcast.emit('chat-message', { message: message, name: rooms[room].users[socket.id] })
+  })
+  socket.on('disconnect', () => {
+    getUserRooms(socket).forEach(room => {
+      socket.to(room).broadcast.emit('user-disconnected', rooms[room].users[socket.id])
+      delete rooms[room].users[socket.id]
+    })
+  })
+})
 
-app.use(express.static("public"));
-
-
-// Declare routes variables
-const indexRouter = require('./routes/index');
-
-
-// setup views connecting with routes
-app.use('/chat', indexRouter);
-
-
-// Socket setup
-const io = socket(server);
-
-// when user logs in
-io.on("connection", function (socket) {
-  console.log("Made socket connection");
-});
-
-
-
-console.log('Global variable '+process.env.NAME);
-
-// module.exports = app;
+function getUserRooms(socket) {
+  return Object.entries(rooms).reduce((names, [name, room]) => {
+    if (room.users[socket.id] != null) names.push(name)
+    return names
+  }, [])
+}

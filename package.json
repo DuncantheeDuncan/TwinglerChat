@@ -2,12 +2,10 @@
   "name": "twinglerchat",
   "version": "1.0.0",
   "description": "Twingler chat Apllication",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server",
-    "dev": "nodemon server"
-  },
-  "repository": {
+    "devStart": "nodemon server.js"
+  },"repository": {
     "type": "git",
     "url": "git+https://github.com/DuncantheeDuncan/TwinglerChat.git"
   },
@@ -18,11 +16,10 @@
   },
   "homepage": "https://github.com/DuncantheeDuncan/TwinglerChat#readme",
   "dependencies": {
-    "dotenv": "^10.0.0",
+    "ejs": "^2.6.1",
     "express": "^4.17.1",
-    "moment": "^2.29.1",
     "pug": "^3.0.2",
-    "socket.io": "^4.1.2"
+    "socket.io": "^2.2.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"
